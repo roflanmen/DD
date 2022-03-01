@@ -142,7 +142,7 @@ class TargetManager:
 
     def load_from_file(self, file_path):
         try:
-            lines = requests.get("https://roflclicker.000webhostapp.com/ddos/targets.txt").content.decode("utf-8").split('\n')
+            lines = load_lines(file_path)
             result = []
             for str in lines:
                 result.append(TargetManager.create_target_from_url(str))
@@ -177,8 +177,8 @@ class ProxyManager:
 
     def load_from_file(self, file_path, proxy_type):
         try:
-            file = requests.get("https://roflclicker.000webhostapp.com/ddos/"+file_path).content
-            lines = file.decode("utf-8").split('\n')
+            file = open(file_path, 'r')
+            lines = file.read().split('\n')
             result = []
             for str in lines:
                 result.append(ProxyManager.__get_proxy_from_str(str, proxy_type))

